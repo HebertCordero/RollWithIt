@@ -1,0 +1,167 @@
+/* Base Styles */
+.dice-roller {
+  max-width: 100%;
+  padding: 1rem;
+  text-align: center;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Mode Selectors */
+.d20-mode-selector, .roll-mode-selector {
+  margin: 1.5rem 0;
+}
+
+.mode-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.mode-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.mode-btn.active {
+  background: #3a3a3a;
+  color: white;
+}
+
+/* Dice Container */
+.dice-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+/* Base Die Styling */
+.die {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  transition: transform 0.5s ease-out;
+}
+
+.die-value {
+  position: relative;
+  z-index: 2;
+  font-size: 1.8rem;
+}
+
+/* D12 (Dodecahedron) */
+.die.d12 {
+  clip-path: polygon(
+    50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%
+  );
+}
+
+/* D20 (Icosahedron) */
+.die.d20 {
+  clip-path: polygon(
+    50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%
+  );
+}
+
+/* D6 (Cube) */
+.die.d6 {
+  clip-path: polygon(
+    0% 0%, 100% 0%, 100% 100%, 0% 100%
+  );
+}
+
+/* Hope Die (Yellow) */
+.hope-die {
+  background: #FFD700;
+}
+
+/* Fear Die (Purple) */
+.fear-die {
+  background: #6A0DAD;
+}
+
+/* Advantage Die (Green) */
+.advantage-die {
+  background: #4BB543;
+}
+
+/* Rolling Animation */
+.rolling {
+  animation: shake 0.5s infinite;
+}
+
+@keyframes shake {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-15deg) scale(1.1); }
+  50% { transform: rotate(15deg) scale(0.9); }
+  75% { transform: rotate(-5deg) scale(1.05); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+/* Total Result */
+.total-result {
+  font-size: 1.3rem;
+  margin: 1rem 0;
+  color: #3a3a3a;
+}
+
+.highlight {
+  font-weight: bold;
+  color: #FFD700;
+}
+
+/* Roll Button */
+.roll-btn {
+  padding: 0.75rem 1.5rem;
+  background: #3a3a3a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin: 1rem 0;
+  transition: background 0.2s;
+}
+
+.roll-btn:hover {
+  background: #2c456e;
+}
+
+.roll-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Home Link */
+.home-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #3a3a3a;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+  .dice-container {
+    gap: 1rem;
+  }
+
+  .die {
+    width: 70px;
+    height: 70px;
+  }
+}

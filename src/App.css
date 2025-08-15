@@ -1,0 +1,27 @@
+.app {
+  font-family: Arial, sans-serif;
+}
+
+nav {
+  background-color: #f8f9fa;
+  padding: 1rem;
+}
+
+nav ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 1rem;
+}
+
+nav a {
+  text-decoration: none;
+  color: #333;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+}
+
+nav a:hover {
+  background-color: #e9ecef;
+}
