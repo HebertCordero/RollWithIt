@@ -14,21 +14,29 @@ export default function DiceRoller() {
   const [rollMode, setRollMode] = useState<RollMode>('normal');
   const [isRolling, setIsRolling] = useState(false);
   const [rollHistory, setRollHistory] = useState<Array<[number, number, number]>>([]);
+  const [showCritical, setShowCritical] = useState(false);
 
   const rollDice = (sides: number) => Math.floor(Math.random() * sides) + 1;
 
   const handleRoll = () => {
     if (isRolling) return;
     setIsRolling(true);
+    setShowCritical(false);
 
     // Determine dice types
     const hopeSides = d20Mode === 'hope' || d20Mode === 'both' ? 20 : 12;
     const fearSides = d20Mode === 'fear' || d20Mode === 'both' ? 20 : 12;
 
-    // Roll Hope & Fear
+    // Roll Hope & Fear - sides determined above
     const hopeResult = rollDice(hopeSides);
     const fearResult = rollDice(fearSides);
     const advantageResult = rollMode === 'advantage' ? rollDice(6) : 0;
+
+    // Check for critical
+    if (hopeResult === fearResult) {
+      setShowCritical(true);
+      setTimeout(() => setShowCritical(false), 3000);
+    }
 
     setHopeDie(hopeResult);
     setFearDie(fearResult);
@@ -41,6 +49,15 @@ export default function DiceRoller() {
   };
 
   const totalResult = hopeDie + fearDie + (rollMode === 'advantage' ? advantageDie : 0);
+
+  // Updated CriticalToast component
+  const CriticalToast = () => {    
+    return (
+      <div className="critical-toast">
+        <div className="critical-message">CRITICAL SUCCESS!</div>
+      </div>
+    );
+  };
 
   return (
     <div className="dice-roller">
@@ -102,8 +119,8 @@ export default function DiceRoller() {
       </div>
 
       {/* Total Result (always shown) */}
-      <div className="total-result">
-        Total: <span className="highlight">{totalResult}</span>
+      <div className={`total-result ${hopeDie > fearDie ? 'withHope' : 'withFear'}`}>
+        Total: <span className="highlight">{totalResult} {hopeDie > fearDie ? 'with Hope' : 'with Fear'}</span>
         {rollMode === 'advantage' && (
           <span className="breakdown"> ({hopeDie} + {fearDie} + {advantageDie})</span>
         )}
@@ -136,7 +153,7 @@ export default function DiceRoller() {
           ))}
         </div>
       )}
-
+      {showCritical && <CriticalToast />}
       <Link to="/" className="home-link">Back to Character Sheet</Link>
     </div>
   );

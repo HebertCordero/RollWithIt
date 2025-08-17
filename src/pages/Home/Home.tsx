@@ -34,6 +34,26 @@ const initialCharacter: Character = {
       used: false,
       locked: false
     }))
+  },
+  damageThresholds: {
+    minor: 6,
+    major: 12,
+    severe: 18,
+    locked: false
+  },
+  health: {
+    max: 6,
+    slots: Array.from({ length: 12 }, () => ({
+      used: false,
+      locked: false
+    }))
+  },
+  stress: {
+    max: 6,
+    slots: Array.from({ length: 12 }, () => ({
+      used: false,
+      locked: false
+    }))
   }
 };
 
@@ -42,6 +62,25 @@ interface SaveStatus {
   success: boolean;
   error?: string;
 }
+
+const ResourceSlot = ({ used, locked, onToggle, onLockToggle }: {
+  used: boolean;
+  locked: boolean;
+  onToggle: () => void;
+  onLockToggle: () => void;
+}) => (
+  <div 
+    className={`resource-slot ${used ? 'used' : ''}`}
+    onClick={onToggle}
+    onContextMenu={(e) => {
+      e.preventDefault();
+      onLockToggle();
+    }}
+    title={locked ? "Right-click to unlock" : `Left-click to ${used ? 'heal' : 'damage'}\nRight-click to ${locked ? 'unlock' : 'lock'}`}
+  >
+    {locked && <img className="slot-lock-icon" src="/i-locked.svg" alt="Locked" />}
+  </div>
+);
 
 export default function CharacterSheet() {
   const [character, setCharacter] = useState<Character>(initialCharacter);
@@ -54,7 +93,6 @@ export default function CharacterSheet() {
   useEffect(() => {
     const savedData = loadCharacterData();
     if (savedData) {
-      console.log('Loaded saved data:', savedData);
       setCharacter({
         ...initialCharacter,
         ...savedData,
@@ -72,16 +110,37 @@ export default function CharacterSheet() {
                   }))
                 : initialCharacter.armor.slots
             }
-          : initialCharacter.armor
+          : initialCharacter.armor,
+        damageThresholds: savedData.damageThresholds
+          ? { ...initialCharacter.damageThresholds, ...savedData.damageThresholds }
+          : initialCharacter.damageThresholds,
+        health: savedData.health
+          ? {
+              ...initialCharacter.health,
+              ...savedData.health,
+              slots: savedData.health.slots
+                ? savedData.health.slots.map((slot: any) => ({
+                    ...initialCharacter.health.slots[0],
+                    ...slot
+                  }))
+                : initialCharacter.health.slots
+            }
+          : initialCharacter.health,
+        stress: savedData.stress
+          ? {
+              ...initialCharacter.stress,
+              ...savedData.stress,
+              slots: savedData.stress.slots
+                ? savedData.stress.slots.map((slot: any) => ({
+                    ...initialCharacter.stress.slots[0],
+                    ...slot
+                  }))
+                : initialCharacter.stress.slots
+            }
+          : initialCharacter.stress
       });
     }
   }, []);
-  
-  /*
-    useEffect(() => {
-      console.log('Loaded character:', character);
-    }, [character]);
-  */
 
   const handleSave = async () => {
     setSaveStatus({ loading: true, success: false });
@@ -118,6 +177,7 @@ export default function CharacterSheet() {
       [name]: value,
     }));
   };
+
   const handleLevelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value) || 0;
     setCharacter(prev => ({
@@ -125,6 +185,7 @@ export default function CharacterSheet() {
       level: Math.max(1, Math.min(10, value)),
     }));
   };
+
   const handleStatChange = (stat: keyof Character['stats'], value: number) => {
     setCharacter(prev => ({
       ...prev,
@@ -137,6 +198,7 @@ export default function CharacterSheet() {
       },
     }));
   };
+
   const toggleStatMark = (stat: keyof Character['stats']) => {
     setCharacter(prev => ({
       ...prev,
@@ -149,15 +211,17 @@ export default function CharacterSheet() {
       },
     }));
   };
+
   const handleEvasionChange = (value: number) => {
     setCharacter(prev => ({
       ...prev,
       evasion: {
         ...prev.evasion,
-        value: Math.max(0, Math.min(10,value))
+        value: Math.max(0, Math.min(10, value))
       }
     }));
   };
+
   const handleArmorMaxChange = (value: number) => {
     setCharacter(prev => ({
       ...prev,
@@ -167,6 +231,7 @@ export default function CharacterSheet() {
       }
     }));
   };
+
   const toggleArmorSlot = (index: number) => {
     setCharacter(prev => {
       const newSlots = [...prev.armor.slots];
@@ -183,6 +248,7 @@ export default function CharacterSheet() {
       };
     });
   };
+
   const toggleArmorSlotLock = (index: number) => {
     setCharacter(prev => {
       const newSlots = [...prev.armor.slots];
@@ -199,6 +265,7 @@ export default function CharacterSheet() {
       };
     });
   };
+
   const toggleEvasionLock = () => {
     setCharacter(prev => ({
       ...prev,
@@ -208,6 +275,7 @@ export default function CharacterSheet() {
       }
     }));
   };
+
   const toggleArmorMaxLock = () => {
     setCharacter(prev => ({
       ...prev,
@@ -218,6 +286,69 @@ export default function CharacterSheet() {
     }));
   };
 
+  const updateThreshold = (type: 'minor' | 'major' | 'severe', change: number) => {
+    setCharacter(prev => ({
+      ...prev,
+      damageThresholds: {
+        ...prev.damageThresholds,
+        [type]: Math.max(0, prev.damageThresholds[type] + change)
+      }
+    }));
+  };
+
+  const toggleThresholdsLock = () => {
+    setCharacter(prev => ({
+      ...prev,
+      damageThresholds: {
+        ...prev.damageThresholds,
+        locked: !prev.damageThresholds.locked
+      }
+    }));
+  };
+
+  const updateResourceMax = (resource: 'health' | 'stress', change: number) => {
+    setCharacter(prev => ({
+      ...prev,
+      [resource]: {
+        ...prev[resource],
+        max: Math.max(1, Math.min(12, prev[resource].max + change))
+      }
+    }));
+  };
+
+  const toggleResourceSlot = (resource: 'health' | 'stress', index: number) => {
+    setCharacter(prev => {
+      const newSlots = [...prev[resource].slots];
+      newSlots[index] = {
+        ...newSlots[index],
+        used: !newSlots[index].used
+      };
+      return {
+        ...prev,
+        [resource]: {
+          ...prev[resource],
+          slots: newSlots
+        }
+      };
+    });
+  };
+
+  const toggleResourceSlotLock = (resource: 'health' | 'stress', index: number) => {
+    setCharacter(prev => {
+      const newSlots = [...prev[resource].slots];
+      newSlots[index] = {
+        ...newSlots[index],
+        locked: !newSlots[index].locked
+      };
+      return {
+        ...prev,
+        [resource]: {
+          ...prev[resource],
+          slots: newSlots
+        }
+      };
+    });
+  };
 
   return (
     <div>
@@ -230,7 +361,7 @@ export default function CharacterSheet() {
           <div className="info-grid">
             <div className='info-col'>
               <div className="info-cell name">
-                <label>Name</label>
+                <p>Name</p>
                 <input
                   type="text"
                   name="name"
@@ -240,7 +371,7 @@ export default function CharacterSheet() {
                 />
               </div>
               <div className="info-cell origin">
-                <label>Origin</label>
+                <p>Origin</p>
                 <input
                   type="text"
                   name="origin"
@@ -253,7 +384,7 @@ export default function CharacterSheet() {
             
             <div className='info-col'>
               <div className="info-cell class">
-                <label>Class</label>
+                <p>Class</p>
                 <input
                   type="text"
                   name="class"
@@ -263,7 +394,7 @@ export default function CharacterSheet() {
                 />
               </div>
               <div className="info-cell domain">
-                <label>Domain</label>
+                <p>Domain</p>
                 <input
                   type="text"
                   name="domain"
@@ -276,7 +407,7 @@ export default function CharacterSheet() {
             
             <div className='info-col'>
               <div className="info-cell level">
-                <label>Level</label>
+                <p>Level</p>
                 <input
                   type="number"
                   name="level"
@@ -329,6 +460,153 @@ export default function CharacterSheet() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+        
+        {/* Damage Thresholds Section */}
+        <div className="damage-thresholds">
+          <div className="stat-header">
+            <h3>Damage Thresholds</h3>
+            <button 
+            className={`lock-btn ${character.damageThresholds.locked ? 'locked' : ''}`}
+            onClick={toggleThresholdsLock}
+            >
+            {character.damageThresholds.locked ? <img className="icon" src="/i-locked.svg" alt="Locked" /> : <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
+            </button>
+          </div>
+         
+          <div className="threshold-grid">
+            <div className="threshold-cell">
+              <div className="threshold-input">
+                <button 
+                  onClick={() => updateThreshold('minor', -1)}
+                  disabled={character.damageThresholds.locked}
+                >-</button>
+                <span>{character.damageThresholds.minor}</span>
+                <button 
+                  onClick={() => updateThreshold('minor', 1)}
+                  disabled={character.damageThresholds.locked}
+                >+</button>
+              </div>
+              <p>Minor (1 HP)</p>
+            </div>
+            <div className="threshold-cell">
+              <div className="threshold-input">
+                <button 
+                  onClick={() => updateThreshold('major', -1)}
+                  disabled={character.damageThresholds.locked}
+                >-</button>
+                <span>{character.damageThresholds.major}</span>
+                <button 
+                  onClick={() => updateThreshold('major', 1)}
+                  disabled={character.damageThresholds.locked}
+                >+</button>
+              </div>
+              <p>Major (2 HP)</p>
+            </div>
+            <div className="threshold-cell">
+              <div className="threshold-input">
+                <button 
+                  onClick={() => updateThreshold('severe', -1)}
+                  disabled={character.damageThresholds.locked}
+                >-</button>
+                <span>{character.damageThresholds.severe}</span>
+                <button 
+                  onClick={() => updateThreshold('severe', 1)}
+                  disabled={character.damageThresholds.locked}
+                >+</button>
+              </div>
+              <p>Severe (3 HP)</p>
+            </div>
+          </div>
+        </div>
+        {/* Health & Stress Bars */}
+        <div className="resource-bars">
+          <div className="resource-bar hp">
+            <div className="resource-header">
+              <h3>HP: {character.health.max}</h3>
+              <button 
+                className="lock-btn"
+                onClick={() => setCharacter(prev => ({
+                  ...prev,
+                  health: {
+                    ...prev.health,
+                    locked: !prev.health.locked
+                  }
+                }))}
+                title={character.health.locked ? "Unlock all health slots" : "Lock all health slots"}
+              >
+                {character.health.locked ? 
+                  <img className="icon" src="/i-locked.svg" alt="Locked" /> : 
+                  <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
+              </button>
+            </div>
+            <div className="slots-grid">
+              {character.health.slots.slice(0, character.health.max).map((slot, i) => (
+                <ResourceSlot 
+                  key={`health-${i}`}
+                  used={slot.used}
+                  locked={slot.locked || character.health.locked}
+                  onToggle={() => !character.health.locked && toggleResourceSlot('health', i)}
+                  onLockToggle={() => toggleResourceSlotLock('health', i)}
+                />
+              ))}
+            </div>
+            <div className="resource-controls">
+              <button 
+                onClick={() => updateResourceMax('health', -1)}
+                disabled={character.health.locked}
+              >-</button>
+              <span>Max HP</span>
+              <button 
+                onClick={() => updateResourceMax('health', 1)}
+                disabled={character.health.locked}
+              >+</button>
+            </div>
+          </div>
+          
+          {/* Stress Bar - Same structure as Health */}
+          <div className="resource-bar stress">
+            <div className="resource-header">
+              <h3>Stress: {character.stress.max}</h3>
+              <button 
+                className="lock-btn"
+                onClick={() => setCharacter(prev => ({
+                  ...prev,
+                  stress: {
+                    ...prev.stress,
+                    locked: !prev.stress.locked
+                  }
+                }))}
+                title={character.stress.locked ? "Unlock all stress slots" : "Lock all stress slots"}
+              >
+                {character.stress.locked ? 
+                  <img className="icon" src="/i-locked.svg" alt="Locked" /> : 
+                  <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
+              </button>
+            </div>
+            <div className="slots-grid">
+              {character.stress.slots.slice(0, character.stress.max).map((slot, i) => (
+                <ResourceSlot 
+                  key={`stress-${i}`}
+                  used={slot.used}
+                  locked={slot.locked || character.stress.locked}
+                  onToggle={() => !character.stress.locked && toggleResourceSlot('stress', i)}
+                  onLockToggle={() => toggleResourceSlotLock('stress', i)}
+                />
+              ))}
+            </div>
+            <div className="resource-controls">
+              <button 
+                onClick={() => updateResourceMax('stress', -1)}
+                disabled={character.stress.locked}
+              >-</button>
+              <span>Max Stress</span>
+              <button 
+                onClick={() => updateResourceMax('stress', 1)}
+                disabled={character.stress.locked}
+              >+</button>
+            </div>
           </div>
         </div>
         <div className="defense-section">
