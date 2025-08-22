@@ -1,5 +1,6 @@
 /* Base Styles */
 .dice-roller {
+  display: grid;
   max-width: 100%;
   padding: 1rem;
   text-align: center;

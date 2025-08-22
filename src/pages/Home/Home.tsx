@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Pagination, Navigation } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import { saveCharacterData, loadCharacterData } from '../../utils/storage';
 import type { Character } from '../../types/character';
 import './Home.css';
@@ -38,23 +41,34 @@ const initialCharacter: Character = {
   damageThresholds: {
     minor: 6,
     major: 12,
-    severe: 18,
     locked: false
   },
   health: {
     max: 6,
     slots: Array.from({ length: 12 }, () => ({
       used: false,
-      locked: false
-    }))
+    })),
+    locked: false
   },
   stress: {
     max: 6,
     slots: Array.from({ length: 12 }, () => ({
       used: false,
-      locked: false
-    }))
-  }
+    })),
+    locked: false
+  },
+  hope: {
+    available: 0,
+  },
+  experiences: [
+    { description: 'I read about this', modifier: 2 },
+    { description: 'In the clan, we used to...', modifier: 2 }
+  ],
+  proficiency: {
+    value: 1, // Starts at 1
+    locked: false
+  },
+  classFeature: "**Example Class Feature**\n\n- Does something cool\n- _Another ability_\n- Works in combat",
 };
 
 interface SaveStatus {
@@ -63,22 +77,22 @@ interface SaveStatus {
   error?: string;
 }
 
-const ResourceSlot = ({ used, locked, onToggle, onLockToggle }: {
+const ResourceSlot = ({ used, hp, onToggle }: {
   used: boolean;
-  locked: boolean;
+  hp: boolean;
   onToggle: () => void;
-  onLockToggle: () => void;
 }) => (
   <div 
     className={`resource-slot ${used ? 'used' : ''}`}
     onClick={onToggle}
     onContextMenu={(e) => {
       e.preventDefault();
-      onLockToggle();
     }}
-    title={locked ? "Right-click to unlock" : `Left-click to ${used ? 'heal' : 'damage'}\nRight-click to ${locked ? 'unlock' : 'lock'}`}
   >
-    {locked && <img className="slot-lock-icon" src="/i-locked.svg" alt="Locked" />}
+  {hp ? 
+    used ? <img className="icon" src="/i-hp.svg" alt="Locked" /> : <img className="icon" src="/i-hp_used.svg" alt="Locked" />  : 
+    used ? <img className="icon" src="/i-stress.svg" alt="Unlocked" /> : <img className="icon" src="/i-stress_used.svg" alt="Unlocked" />
+  }
   </div>
 );
 
@@ -89,7 +103,6 @@ export default function CharacterSheet() {
     success: false,
     error: undefined
   });
-
   useEffect(() => {
     const savedData = loadCharacterData();
     if (savedData) {
@@ -128,16 +141,23 @@ export default function CharacterSheet() {
           : initialCharacter.health,
         stress: savedData.stress
           ? {
-              ...initialCharacter.stress,
-              ...savedData.stress,
-              slots: savedData.stress.slots
-                ? savedData.stress.slots.map((slot: any) => ({
-                    ...initialCharacter.stress.slots[0],
-                    ...slot
-                  }))
-                : initialCharacter.stress.slots
-            }
-          : initialCharacter.stress
+            ...initialCharacter.stress,
+            ...savedData.stress,
+            slots: savedData.stress.slots
+              ? savedData.stress.slots.map((slot: any) => ({
+                  ...initialCharacter.stress.slots[0],
+                  ...slot
+                }))
+              : initialCharacter.stress.slots
+          }
+          : initialCharacter.stress,
+        proficiency: savedData.proficiency || initialCharacter.proficiency,
+        hope: savedData.hope
+          ? {
+            ...initialCharacter.hope,
+            ...savedData.hope
+          }
+          : initialCharacter.hope,
       });
     }
   }, []);
@@ -286,12 +306,12 @@ export default function CharacterSheet() {
     }));
   };
 
-  const updateThreshold = (type: 'minor' | 'major' | 'severe', change: number) => {
+  const updateThresholdInput = (type: 'minor' | 'major', value: number) => {
     setCharacter(prev => ({
       ...prev,
       damageThresholds: {
         ...prev.damageThresholds,
-        [type]: Math.max(0, prev.damageThresholds[type] + change)
+        [type]: Math.max(0, value) // Ensure it doesn't go below 0
       }
     }));
   };
@@ -333,31 +353,82 @@ export default function CharacterSheet() {
     });
   };
 
-  const toggleResourceSlotLock = (resource: 'health' | 'stress', index: number) => {
-    setCharacter(prev => {
-      const newSlots = [...prev[resource].slots];
-      newSlots[index] = {
-        ...newSlots[index],
-        locked: !newSlots[index].locked
-      };
-      return {
-        ...prev,
-        [resource]: {
-          ...prev[resource],
-          slots: newSlots
-        }
-      };
-    });
-  };
+  // Add this state at the top of your component
+  const [tabberVisible, setTabberVisible] = useState(false);
+  // Add this component before your return statement
+  const Tabber = () => (
+    <div className={`tabber ${tabberVisible ? 'visible' : ''}`}>
+      <div className="tabber-content">
+        <Link to="/actionscreen" className="tabber-icon">
+          <img src="/i-act.svg" alt="Domain Cards" title="Domain Cards" />
+          <p>Actions</p>
+        </Link>
+        <Link to="/diceroller" className="tabber-icon">
+          <img src="/i-dice.svg" alt="Dice Roller" title="Dice Roller" />
+          <p>DiceRoller</p>
+        </Link>
+        <Link to="/inventory" className="tabber-icon" state={{ character }}>
+          <img src="/i-inv.svg" alt="Inventory" title="Inventory" />
+          <p>Inventory</p>
+        </Link>
+      </div>
+      <button 
+        className="tabber-toggle"
+        onClick={() => setTabberVisible(!tabberVisible)}
+        aria-label={tabberVisible ? "Hide navigation" : "Show navigation"}
+      >
+        <img 
+          src={tabberVisible ? "/i-cheveron_down.svg" : "/i-cheveron_up.svg"} 
+          alt={tabberVisible ? "▼" : "▲"}
+        />
+      </button>
+    </div>
+  );
 
-  return (
+  const [showClassFeatureEdit, setShowClassFeatureEdit] = useState(false);
+  const renderMarkdownPreview = (text: string) => {
+    // Simple markdown to HTML conversion
+    const html = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // bold
+      .replace(/\_(.*?)\_/g, '<em>$1</em>')             // italics
+      .replace(/\n\-(.*?)(\n|$)/g, '\n• $1$2')          // bullets
+      .replace(/\n/g, '<br/>');                         // line breaks
+    
+    return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  };
+  const formatText = (prefix: string, suffix: string) => {
+    const textarea = document.querySelector('.class-feature-input') as HTMLTextAreaElement;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = character.classFeature.substring(start, end);
+    const newText = 
+      character.classFeature.substring(0, start) +
+      prefix + selectedText + suffix +
+      character.classFeature.substring(end);
+    
+    setCharacter({ ...character, classFeature: newText });
+    
+    // Focus back on the textarea
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+    }, 0);
+  };
+  useEffect(() => {
+    if (showClassFeatureEdit) {
+      const textarea = document.querySelector('.class-feature-input') as HTMLTextAreaElement;
+      textarea?.focus();
+    }
+  }, [showClassFeatureEdit]);
+
+return (
     <div>
       <div className="character-sheet">
         <div className='title'>
           <h1>RollWithIt</h1>
           <p>DaggerHeart Companion App</p>
-        </div>    
-        <div className="character-info">
+        </div>
+        <div className="character-info info-container">
           <div className="info-grid">
             <div className='info-col'>
               <div className="info-cell name">
@@ -419,284 +490,527 @@ export default function CharacterSheet() {
               </div>
             </div>
           </div>
-        </div>   
-        <div className="stats-section">
-          <h2>Character Stats</h2>
-          <div className="stats-grid">
-            {Object.entries(character.stats).map(([statKey, statValue]) => (
-              <div key={statKey} className="stat-cell">
-                <div className="stat-header">
-                  <span 
-                    className="stat-name"
-                    title={statDescriptions[statKey as keyof typeof statDescriptions]}
-                  >
-                    {statKey}
-                  </span>
-                  <button 
-                    className={`mark-btn ${statValue.locked ? 'locked' : ''}`}
-                    onClick={() => toggleStatMark(statKey as keyof Character['stats'])}
-                    title={statValue.locked ? "Locked" : "Click to mark for +1 bonus"}
-                  >
-                    {statValue.locked ? <img className="icon" src="/i-locked.svg" alt="Locked" /> : <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
-                  </button>
-                </div>
-                <div className="stat-value">
-                  <button 
-                    onClick={() => handleStatChange(statKey as keyof Character['stats'], statValue.value - 1)}
-                    disabled={statValue.value <= -3 || statValue.locked}
-                  >
-                    -
-                  </button>
-                  <span>{statValue.value}</span>
-                  <button 
-                    onClick={() => handleStatChange(statKey as keyof Character['stats'], statValue.value + 1)}
-                    disabled={statValue.value >= 3 || statValue.locked}
-                  >
-                    +
-                  </button>
-                </div>
-                <div className="stat-description">
-                  {statDescriptions[statKey as keyof typeof statDescriptions]}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
-        
-        {/* Damage Thresholds Section */}
-        <div className="damage-thresholds">
-          <div className="stat-header">
-            <h3>Damage Thresholds</h3>
-            <button 
-            className={`lock-btn ${character.damageThresholds.locked ? 'locked' : ''}`}
-            onClick={toggleThresholdsLock}
-            >
-            {character.damageThresholds.locked ? <img className="icon" src="/i-locked.svg" alt="Locked" /> : <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
-            </button>
-          </div>
-         
-          <div className="threshold-grid">
-            <div className="threshold-cell">
-              <div className="threshold-input">
-                <button 
-                  onClick={() => updateThreshold('minor', -1)}
-                  disabled={character.damageThresholds.locked}
-                >-</button>
-                <span>{character.damageThresholds.minor}</span>
-                <button 
-                  onClick={() => updateThreshold('minor', 1)}
-                  disabled={character.damageThresholds.locked}
-                >+</button>
-              </div>
-              <p>Minor (1 HP)</p>
-            </div>
-            <div className="threshold-cell">
-              <div className="threshold-input">
-                <button 
-                  onClick={() => updateThreshold('major', -1)}
-                  disabled={character.damageThresholds.locked}
-                >-</button>
-                <span>{character.damageThresholds.major}</span>
-                <button 
-                  onClick={() => updateThreshold('major', 1)}
-                  disabled={character.damageThresholds.locked}
-                >+</button>
-              </div>
-              <p>Major (2 HP)</p>
-            </div>
-            <div className="threshold-cell">
-              <div className="threshold-input">
-                <button 
-                  onClick={() => updateThreshold('severe', -1)}
-                  disabled={character.damageThresholds.locked}
-                >-</button>
-                <span>{character.damageThresholds.severe}</span>
-                <button 
-                  onClick={() => updateThreshold('severe', 1)}
-                  disabled={character.damageThresholds.locked}
-                >+</button>
-              </div>
-              <p>Severe (3 HP)</p>
-            </div>
-          </div>
-        </div>
-        {/* Health & Stress Bars */}
-        <div className="resource-bars">
-          <div className="resource-bar hp">
-            <div className="resource-header">
-              <h3>HP: {character.health.max}</h3>
+        <Swiper
+          spaceBetween={50}
+          pagination={{
+            dynamicBullets: true,
+          }}
+          navigation={true}
+          modules={[Pagination, Navigation]}
+          className="HomeSlider info-container"
+          slidesPerView={1}>
+          {/* Character Stats + Porf & Hope */}
+          <SwiperSlide>
+            <h2>Character Stats</h2>
+            <section className="stats-grid">
+              {Object.entries(character.stats).map(([statKey, statValue]) => (
+                <div key={statKey} className="stat-cell box-container">
+                  <div className="header">
+                    <span 
+                      className="stat-name"
+                      title={statDescriptions[statKey as keyof typeof statDescriptions]}
+                    >
+                      {statKey}
+                    </span>
+                    <button 
+                      className={`mark-btn ${statValue.locked ? 'locked' : ''}`}
+                      onClick={() => toggleStatMark(statKey as keyof Character['stats'])}
+                      title={statValue.locked ? "Locked" : "Click to mark for +1 bonus"}
+                    >
+                      {statValue.locked ? <img className="icon" src="/i-locked.svg" alt="Locked" /> : <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
+                    </button>
+                  </div>
+                  <div className="stat-value">
+                    <button 
+                      onClick={() => handleStatChange(statKey as keyof Character['stats'], statValue.value - 1)}
+                      disabled={statValue.value <= -3 || statValue.locked}
+                    >
+                      -
+                    </button>
+                    <span>{statValue.value}</span>
+                    <button 
+                      onClick={() => handleStatChange(statKey as keyof Character['stats'], statValue.value + 1)}
+                      disabled={statValue.value >= 3 || statValue.locked}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <p className="stat-description">
+                    {statDescriptions[statKey as keyof typeof statDescriptions]}
+                  </p>
+                </div>
+              ))}
+            </section>
+            <section className="proficiency-section box-container">
+            <div className="header">
+              <h3>Proficiency</h3>
               <button 
-                className="lock-btn"
-                onClick={() => setCharacter(prev => ({
-                  ...prev,
-                  health: {
-                    ...prev.health,
-                    locked: !prev.health.locked
+                className={`lock-btn ${character.proficiency.locked ? 'locked' : ''}`}
+                onClick={() => setCharacter({
+                  ...character,
+                  proficiency: {
+                    ...character.proficiency,
+                    locked: !character.proficiency.locked
                   }
-                }))}
-                title={character.health.locked ? "Unlock all health slots" : "Lock all health slots"}
+                })}
+                title={character.proficiency.locked ? "Unlock proficiency" : "Lock proficiency"}
               >
-                {character.health.locked ? 
+                {character.proficiency.locked ? 
                   <img className="icon" src="/i-locked.svg" alt="Locked" /> : 
                   <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
               </button>
             </div>
-            <div className="slots-grid">
-              {character.health.slots.slice(0, character.health.max).map((slot, i) => (
-                <ResourceSlot 
-                  key={`health-${i}`}
-                  used={slot.used}
-                  locked={slot.locked || character.health.locked}
-                  onToggle={() => !character.health.locked && toggleResourceSlot('health', i)}
-                  onLockToggle={() => toggleResourceSlotLock('health', i)}
-                />
-              ))}
-            </div>
-            <div className="resource-controls">
+            <div className="proficiency-value">
               <button 
-                onClick={() => updateResourceMax('health', -1)}
-                disabled={character.health.locked}
-              >-</button>
-              <span>Max HP</span>
-              <button 
-                onClick={() => updateResourceMax('health', 1)}
-                disabled={character.health.locked}
-              >+</button>
-            </div>
-          </div>
-          
-          {/* Stress Bar - Same structure as Health */}
-          <div className="resource-bar stress">
-            <div className="resource-header">
-              <h3>Stress: {character.stress.max}</h3>
-              <button 
-                className="lock-btn"
-                onClick={() => setCharacter(prev => ({
-                  ...prev,
-                  stress: {
-                    ...prev.stress,
-                    locked: !prev.stress.locked
+                onClick={() => setCharacter({
+                  ...character,
+                  proficiency: {
+                    ...character.proficiency,
+                    value: Math.max(1, character.proficiency.value - 1)
                   }
-                }))}
-                title={character.stress.locked ? "Unlock all stress slots" : "Lock all stress slots"}
+                })}
+                disabled={character.proficiency.value <= 1 || character.proficiency.locked}
               >
-                {character.stress.locked ? 
-                  <img className="icon" src="/i-locked.svg" alt="Locked" /> : 
-                  <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
+                -
+              </button>
+              <span>{character.proficiency.value}</span>
+              <button 
+                onClick={() => setCharacter({
+                  ...character,
+                  proficiency: {
+                    ...character.proficiency,
+                    value: Math.min(6, character.proficiency.value + 1)
+                  }
+                })}
+                disabled={character.proficiency.value >= 6 || character.proficiency.locked}
+              >
+                +
               </button>
             </div>
-            <div className="slots-grid">
-              {character.stress.slots.slice(0, character.stress.max).map((slot, i) => (
-                <ResourceSlot 
-                  key={`stress-${i}`}
-                  used={slot.used}
-                  locked={slot.locked || character.stress.locked}
-                  onToggle={() => !character.stress.locked && toggleResourceSlot('stress', i)}
-                  onLockToggle={() => toggleResourceSlotLock('stress', i)}
-                />
-              ))}
+            </section>
+            <section className="hope-section box-container">
+              <h3 className='header'>Hope: {character.hope.available} / 6</h3>
+              <div className="hope-slots">
+                {Array.from({ length: 6 }).map((_, index) => {
+                  const isAvailable = index < character.hope.available;
+                  return (
+                    <div 
+                      key={`hope-${index}`}
+                      className={`hope-slot ${isAvailable ? '' : 'used'}`}
+                      onClick={() => {
+                        setCharacter(prev => {
+                          const newAvailable = isAvailable 
+                            ? prev.hope.available - 1
+                            : prev.hope.available + 1;
+                          
+                          return {
+                            ...prev,
+                            hope: {
+                              available: Math.max(0, Math.min(6, newAvailable))
+                            }
+                          };
+                        });
+                      }}
+                      title={isAvailable ? "Click to spend hope" : "Click to restore hope"}
+                    >
+                      {isAvailable ? 
+                      <img className="icon" src="/i-hope.svg" alt="Locked" /> : 
+                      <img className="icon" src="/i-hope_slot.svg" alt="Unlocked" />}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+            <div className="experience-section box-container">
+              <h3 className='header'>Experiences</h3>
+              <div className="experience-list">
+                {character.experiences.map((exp, index) => (
+                  <div key={index} className="experience-item">
+                    <input
+                      type="text"
+                      value={exp.description}
+                      onChange={(e) => {
+                        const newExperiences = [...character.experiences];
+                        newExperiences[index].description = e.target.value;
+                        setCharacter({ ...character, experiences: newExperiences });
+                      }}
+                      placeholder="e.g., 'SHHhhhhhhh...' for stealth"
+                    />
+                    <div className="modifier-controls">
+                      <button
+                        onClick={() => {
+                          const newExperiences = [...character.experiences];
+                          newExperiences[index].modifier = Math.max(0, exp.modifier - 1);
+                          setCharacter({ ...character, experiences: newExperiences });
+                        }}
+                      >
+                        -
+                      </button>
+                      <span>+{exp.modifier}</span>
+                      <button
+                        onClick={() => {
+                          const newExperiences = [...character.experiences];
+                          newExperiences[index].modifier = exp.modifier + 1;
+                          setCharacter({ ...character, experiences: newExperiences });
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      className="remove-experience"
+                      onClick={() => {
+                        const newExperiences = character.experiences.filter((_, i) => i !== index);
+                        setCharacter({ ...character, experiences: newExperiences });
+                      }}
+                      title="Remove experience"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                className="add-experience"
+                onClick={() => {
+                  setCharacter({
+                    ...character,
+                    experiences: [
+                      ...character.experiences,
+                      { description: '', modifier: 2 }
+                    ]
+                  });
+                }}
+                disabled={character.experiences.length >= 6} // Optional limit
+              >
+                + Add Experience
+              </button>
             </div>
-            <div className="resource-controls">
-              <button 
-                onClick={() => updateResourceMax('stress', -1)}
-                disabled={character.stress.locked}
-              >-</button>
-              <span>Max Stress</span>
-              <button 
-                onClick={() => updateResourceMax('stress', 1)}
-                disabled={character.stress.locked}
-              >+</button>
-            </div>
-          </div>
-        </div>
-        <div className="defense-section">
-          <h3>Defense</h3>
-          <div className="defense-row">
-            <div className="defense-stat">
-              <div className="stat-header">
-                <span>Evasion</span>
+          </SwiperSlide>
+          {/* Damage Thresholds Section + Health & Stress Bars */}
+          <SwiperSlide>
+            <h2>Combat & Armor</h2>
+            <section className="damage-thresholds box-container">
+              <div className="header">
+                <h3>Damage Thresholds</h3>
                 <button 
-                  className={`lock-btn ${character.evasion.locked ? 'locked' : ''}`}
-                  onClick={toggleEvasionLock}
-                  title={character.evasion.locked ? "Unlock evasion" : "Lock evasion"}
+                className={`lock-btn ${character.damageThresholds.locked ? 'locked' : ''}`}
+                onClick={toggleThresholdsLock}
                 >
-                  {character.evasion.locked ? 
-                    <img className="icon" src="/i-locked.svg" alt="Locked" /> : 
-                    <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
+                {character.damageThresholds.locked ? <img className="icon" src="/i-locked.svg" alt="Locked" /> : <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
                 </button>
               </div>
-              <div className="stat-value">
-                <button 
-                  onClick={() => handleEvasionChange(character.evasion.value - 1)}
-                  disabled={character.evasion.value <= 0 || character.evasion.locked}
-                >
-                  -
-                </button>
-                <span>{character.evasion.value}</span>
-                <button 
-                  onClick={() => handleEvasionChange(character.evasion.value + 1)}
-                  disabled={character.evasion.value >= 10 || character.evasion.locked}
-                >
-                  +
-                </button>
-              </div>
-            </div>
             
-            <div className="defense-stat">
-              <div className="stat-header">
-                <span>Armor Max</span>
-                <button 
-                  className={`lock-btn ${character.armor.locked ? 'locked' : ''}`}
-                  onClick={toggleArmorMaxLock}
-                  title={character.armor.locked ? "Unlock armor" : "Lock armor"}
-                >
-                  {character.armor.locked ? 
-                    <img className="icon" src="/i-locked.svg" alt="Locked" /> : 
-                    <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
-                </button>
+              <div className="threshold-grid">
+                <div className="threshold-cell">
+                  <div className="threshold-info">
+                    <p className="threshold-label">Minor</p>
+                    <p className="threshold-description">Mark 1 HP</p>
+                  </div>
+                  <input
+                      type="number"
+                      value={character.damageThresholds.minor}
+                      onChange={(e) => updateThresholdInput('minor', parseInt(e.target.value))}
+                      min="0"
+                      max="30"
+                      disabled={character.damageThresholds.locked}
+                      className="threshold-input-field"
+                    />
+                    {/*
+                    <button 
+                      onClick={() => updateThreshold('minor', -1)}
+                      disabled={character.damageThresholds.locked}
+                    >-</button>
+                    <span>{character.damageThresholds.minor}</span>
+                    <button 
+                      onClick={() => updateThreshold('minor', 1)}
+                      disabled={character.damageThresholds.locked}
+                    >+</button>
+                    */}
+                </div>
+                <div className="threshold-cell">
+                  <div className="threshold-info">
+                    <p className="threshold-label">Major</p>
+                    <p className="threshold-description">Mark 2 HP</p>
+                  </div>
+                  <input
+                    type="number"
+                    value={character.damageThresholds.major}
+                    onChange={(e) => updateThresholdInput('major', parseInt(e.target.value))}
+                    min="0"
+                    max="30"
+                    disabled={character.damageThresholds.locked}
+                    className="threshold-input-field"
+                  />
+                  {/* 
+                  <button 
+                    onClick={() => updateThreshold('major', -1)}
+                    disabled={character.damageThresholds.locked}
+                  >-</button>
+                  <span>{character.damageThresholds.major}</span>
+                  <button 
+                    onClick={() => updateThreshold('major', 1)}
+                    disabled={character.damageThresholds.locked}
+                  >+</button>
+                  */}
+                </div>
+                <div className="threshold-cell">
+                  <div className="threshold-info">
+                    <p className="threshold-label">Severe</p>
+                    <p className="threshold-description">Mark 3 HP</p>
+                  </div>
+                </div>
+                {/*
+                <div className="threshold-cell">
+                  <div className="threshold-input">
+                    <button 
+                      onClick={() => updateThreshold('severe', -1)}
+                      disabled={character.damageThresholds.locked}
+                    >-</button>
+                    <span>{character.damageThresholds.severe}</span>
+                    <button 
+                      onClick={() => updateThreshold('severe', 1)}
+                      disabled={character.damageThresholds.locked}
+                    >+</button>
+                  </div>
+                  <p>Severe (3 HP)</p>
+                </div>
+                */}
               </div>
-              <div className="stat-value">
-                <button 
-                  onClick={() => handleArmorMaxChange(character.armor.max - 1)}
-                  disabled={character.armor.max <= 0 || character.armor.locked}
-                >
-                  -
-                </button>
-                <span>{character.armor.max}</span>
-                <button 
-                  onClick={() => handleArmorMaxChange(character.armor.max + 1)}
-                  disabled={character.armor.max >= 12 || character.armor.locked}
-                >
-                  +
-                </button>
+            </section>
+            <div className="resource-bars">
+              {/* Health Bar */}
+              <div className="resource-bar hp">
+                <div className="resource-header header">
+                  <h3>HP: {character.health.max}</h3>
+                  <button 
+                    className={`lock-btn ${character.health.locked ? 'locked' : ''}`}
+                    onClick={() => setCharacter(prev => ({
+                      ...prev,
+                      health: {
+                        ...prev.health,
+                        locked: !prev.health.locked
+                      }
+                    }))}
+                    title={character.health.locked ? "Unlock HP maximum" : "Lock HP maximum"}
+                  >
+                    {character.health.locked ? 
+                      <img className="icon" src="/i-locked.svg" alt="Locked" /> : 
+                      <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
+                  </button>
+                </div>
+                <div className="slots-grid">
+                  {character.health.slots.slice(0, character.health.max).map((slot, i) => (
+                    <ResourceSlot 
+                      key={`health-${i}`}
+                      used={slot.used}
+                      hp={true}
+                      onToggle={() => !character.health.locked && toggleResourceSlot('health', i)}
+                    />
+                  ))}
+                </div>
+                <div className="resource-controls">
+                  <button 
+                    onClick={() => updateResourceMax('health', -1)}
+                    disabled={character.health.locked}
+                  >-</button>
+                  <span>Max HP</span>
+                  <button 
+                    onClick={() => updateResourceMax('health', 1)}
+                    disabled={character.health.locked}
+                  >+</button>
+                </div>
+              </div>
+              {/* Stress Bar */}
+              <div className="resource-bar stress">
+                <div className="resource-header header">
+                  <h3>Stress: {character.stress.max}</h3>
+                  <button 
+                    className={`lock-btn ${character.stress.locked ? 'locked' : ''}`}
+                    onClick={() => setCharacter(prev => ({
+                      ...prev,
+                      stress: {
+                        ...prev.stress,
+                        locked: !prev.stress.locked
+                      }
+                    }))}
+                    title={character.stress.locked ? "Unlock all stress slots" : "Lock all stress slots"}
+                  >
+                    {character.stress.locked ? 
+                      <img className="icon" src="/i-locked.svg" alt="Locked" /> : 
+                      <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
+                  </button>
+                </div>
+                <div className="slots-grid">
+                  {character.stress.slots.slice(0, character.stress.max).map((slot, i) => (
+                    <ResourceSlot 
+                      key={`stress-${i}`}
+                      used={slot.used}
+                      hp={false}
+                      onToggle={() => !character.stress.locked && toggleResourceSlot('stress', i)}
+                    />
+                  ))}
+                </div>
+                <div className="resource-controls">
+                  <button 
+                    onClick={() => updateResourceMax('stress', -1)}
+                    disabled={character.stress.locked}
+                  >-</button>
+                  <span>Max Stress</span>
+                  <button 
+                    onClick={() => updateResourceMax('stress', 1)}
+                    disabled={character.stress.locked}
+                  >+</button>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="armor-slots">
-            <h3>Armor Slots</h3>
-            <div className="slots-grid">
-              {character.armor.slots.slice(0, character.armor.max).map((slot, index) => (
-                <button
-                  key={index}
-                  className={`armor-slot ${slot.used ? 'used' : ''}`}
-                  onClick={() => !slot.locked && toggleArmorSlot(index)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    toggleArmorSlotLock(index);
-                  }}
-                  title={slot.locked ? 
-                    "Right-click to unlock" : 
-                    `Left-click to ${slot.used ? 'repair' : 'use'} armor\nRight-click to lock`}
-                >
-                  {slot.used ? 
-                    <img className="i-armorSlot" src="/i-shield_broken.svg" alt="Used Armor" /> : 
-                    <img className="i-armorSlot" src="/i-shield_available.svg" alt="Available Armor" />}
-                  {slot.locked && <span className="slot-lock">🔒</span>}
-                </button>
-              ))}
+            <div className="defense-section">
+              <div className="resource-header header">
+                <h3>Defense</h3>
+              </div>
+              
+              <div className="defense-row">
+                <div className="defense-stat">
+                  <div className="header">
+                    <span>Evasion</span>
+                    <button 
+                      className={`lock-btn ${character.evasion.locked ? 'locked' : ''}`}
+                      onClick={toggleEvasionLock}
+                      title={character.evasion.locked ? "Unlock evasion" : "Lock evasion"}
+                    >
+                      {character.evasion.locked ? 
+                        <img className="icon" src="/i-locked.svg" alt="Locked" /> : 
+                        <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
+                    </button>
+                  </div>
+                  <div className="stat-value">
+                    <button 
+                      onClick={() => handleEvasionChange(character.evasion.value - 1)}
+                      disabled={character.evasion.value <= 0 || character.evasion.locked}
+                    >
+                      -
+                    </button>
+                    <span>{character.evasion.value}</span>
+                    <button 
+                      onClick={() => handleEvasionChange(character.evasion.value + 1)}
+                      disabled={character.evasion.value >= 10 || character.evasion.locked}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="defense-stat">
+                  <div className="header">
+                    <span>Armor Max</span>
+                    <button 
+                      className={`lock-btn ${character.armor.locked ? 'locked' : ''}`}
+                      onClick={toggleArmorMaxLock}
+                      title={character.armor.locked ? "Unlock armor" : "Lock armor"}
+                    >
+                      {character.armor.locked ? 
+                        <img className="icon" src="/i-locked.svg" alt="Locked" /> : 
+                        <img className="icon" src="/i-unlocked.svg" alt="Unlocked" />}
+                    </button>
+                  </div>
+                  <div className="stat-value">
+                    <button 
+                      onClick={() => handleArmorMaxChange(character.armor.max - 1)}
+                      disabled={character.armor.max <= 0 || character.armor.locked}
+                    >
+                      -
+                    </button>
+                    <span>{character.armor.max}</span>
+                    <button 
+                      onClick={() => handleArmorMaxChange(character.armor.max + 1)}
+                      disabled={character.armor.max >= 12 || character.armor.locked}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="armor-slots">
+                <div className="resource-header header">
+                  <h3>Armor Slots</h3>
+                </div>
+                <div className="slots-grid">
+                  {character.armor.slots.slice(0, character.armor.max).map((slot, index) => (
+                    <button
+                      key={index}
+                      className={`armor-slot ${slot.used ? 'used' : ''}`}
+                      onClick={() => !slot.locked && toggleArmorSlot(index)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        toggleArmorSlotLock(index);
+                      }}
+                      title={slot.locked ? 
+                        "Right-click to unlock" : 
+                        `Left-click to ${slot.used ? 'repair' : 'use'} armor\nRight-click to lock`}
+                    >
+                      {slot.used ? 
+                        <img className="i-armorSlot" src="/i-shield_broken.svg" alt="Used Armor" /> : 
+                        <img className="i-armorSlot" src="/i-shield_available.svg" alt="Available Armor" />}
+                      {slot.locked && <span className="slot-lock">🔒</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </SwiperSlide>
+          {/* Experiences + Class Features */}
+          <SwiperSlide>
+            <h2>Experiences & Features</h2>
+            <div className="class-feature-section">
+              <div className="section-header">
+                <h3>Class Features</h3>
+                <button 
+                  onClick={() => setShowClassFeatureEdit(!showClassFeatureEdit)}
+                  className="toggle-edit-btn"
+                  >
+                  {showClassFeatureEdit ? 'Done' : 'Edit'}
+                </button>
+              </div>
+              <p className="markdown-hint">
+                Supports: **bold**, _italics_, - bullets
+              </p>
+              {showClassFeatureEdit ? (
+              <>
+                <div className="markdown-toolbar">
+                  <button onClick={() => formatText('**', '**')} title="Bold">B</button>
+                  <button onClick={() => formatText('_', '_')} title="Italic">I</button>
+                  <button onClick={() => formatText('\n- ', '')} title="Bullet">•</button>
+                </div>
+                <textarea
+                  value={character.classFeature}
+                  onChange={(e) => setCharacter({
+                    ...character,
+                    classFeature: e.target.value
+                  })}
+                  placeholder="Enter your class features with markdown formatting..."
+                  className="class-feature-input"
+                />
+              </>
+              ) : (
+              <div 
+                  className="class-feature-display"
+                  onClick={() => setShowClassFeatureEdit(true)}
+                >
+                  {character.classFeature ? (
+                    <div className="markdown-preview">
+                      {renderMarkdownPreview(character.classFeature)}
+                    </div>
+                  ) : (
+                    <div className="empty-placeholder">
+                      Click "Edit" to add class features
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </SwiperSlide>
+        </Swiper>
       </div>
       <div className="save-section">
         <button 
@@ -707,7 +1021,8 @@ export default function CharacterSheet() {
         >
           {saveStatus.loading ? 'Saving...' : 'Save'}
         </button>
-      </div>  
+      </div>
+      <Tabber />
       <SaveToast />
     </div>
   );

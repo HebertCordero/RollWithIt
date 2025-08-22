@@ -14,16 +14,15 @@ export interface Armor {
 export interface DamageThresholds {
   minor: number;
   major: number;
-  severe: number;
   locked: boolean;
 }
 export interface ResourceSlot {
   used: boolean;
-  locked: boolean;
 }
 export interface ResourcePool {
   max: number;
   slots: ResourceSlot[];
+  locked: boolean;
 }
 export interface Character {
   name: string;
@@ -44,4 +43,16 @@ export interface Character {
   damageThresholds: DamageThresholds;
   health: ResourcePool;
   stress: ResourcePool;
+  hope: {
+    available: number;
+  };
+  experiences: [
+    { description: 'I read about this', modifier: 2 },
+    { description: 'In the clan, we used to...', modifier: 2 }
+  ];
+  proficiency: {
+    value: number;
+    locked: boolean;
+  };
+  classFeature: string;
 }
