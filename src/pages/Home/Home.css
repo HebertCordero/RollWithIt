@@ -37,7 +37,8 @@
   color: var(--theme-Black);
 }
 /* Home */
-.character-sheet {
+.character-sheet,
+.items-sheet {
   max-width: 100%;
   padding: 15px 10px;
 }
@@ -494,7 +495,7 @@ p.threshold-label {
   padding: 1rem;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
-  border: 1px solid #000;
+  border: 1px solid var(--theme-Black);
   justify-items: center;
   align-items: center;
 }
@@ -528,7 +529,7 @@ p.threshold-label {
   width: 40px;
   height: 35px;
   background-color: #f5f5f5;
-  border: 1px solid #000;
+  border: 1px solid var(--theme-Black);
   border-bottom: bisque;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
@@ -545,10 +546,6 @@ p.threshold-label {
   width: 24px;
   height: 24px;
   transition: transform 0.3s;
-}
-/* Adjust character sheet to account for tabber */
-.character-sheet {
-  padding-bottom: 40px; /* Space for the toggle button */
 }
 /* Home: Save */
 .save-section {

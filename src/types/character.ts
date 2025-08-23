@@ -24,6 +24,10 @@ export interface ResourcePool {
   slots: ResourceSlot[];
   locked: boolean;
 }
+export interface Experience {
+  description: string;
+  modifier: number;
+}
 export interface Character {
   name: string;
   class: string;
@@ -46,10 +50,7 @@ export interface Character {
   hope: {
     available: number;
   };
-  experiences: [
-    { description: 'I read about this', modifier: 2 },
-    { description: 'In the clan, we used to...', modifier: 2 }
-  ];
+  experiences: Experience[];
   proficiency: {
     value: number;
     locked: boolean;

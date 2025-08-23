@@ -4,6 +4,7 @@ import { Pagination, Navigation } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { saveCharacterData, loadCharacterData } from '../../utils/storage';
 import type { Character } from '../../types/character';
+import Inventory from '../../components/Inventory';
 import './Home.css';
 
 const statDescriptions = {
@@ -71,6 +72,23 @@ const initialCharacter: Character = {
   classFeature: "**Example Class Feature**\n\n- Does something cool\n- _Another ability_\n- Works in combat",
 };
 
+type DamageDie = 'd4' | 'd6' | 'd8' | 'd12' | 'd20';
+interface Weapon {
+  name: string;
+  traitRange: string;
+  damageDie: DamageDie;
+  damageBonus: number;
+  damageType: string;
+  feature: string;
+}
+interface Armor {
+  name: string;
+  minorThreshold: number;
+  majorThreshold: number;
+  baseScore: number;
+  feature: string;
+}
+
 interface SaveStatus {
   loading: boolean;
   success: boolean;
@@ -103,8 +121,51 @@ export default function CharacterSheet() {
     success: false,
     error: undefined
   });
+  const [primaryWeapon, setPrimaryWeapon] = useState<Weapon>({
+    name: '',
+    traitRange: '',
+    damageDie: 'd6',
+    damageBonus: 0,
+    damageType: '',
+    feature: ''
+  });
+  const [secondaryWeapon, setSecondaryWeapon] = useState<Weapon>({
+    name: '',
+    traitRange: '',
+    damageDie: 'd6',
+    damageBonus: 0,
+    damageType: '',
+    feature: ''
+  });
+  const [activeArmor, setActiveArmor] = useState<Armor>({
+    name: '',
+    minorThreshold: 6,
+    majorThreshold: 12,
+    baseScore: 0,
+    feature: ''
+  });
+  const handleWeaponChange = (weaponType: 'primary' | 'secondary', field: keyof Weapon, value: string | number) => {
+    if (weaponType === 'primary') {
+      setPrimaryWeapon(prev => ({ ...prev, [field]: value }));
+    } else {
+      setSecondaryWeapon(prev => ({ ...prev, [field]: value }));
+    }
+  };
+  const handleArmorChange = (field: keyof Armor, value: string | number) => {
+    setActiveArmor(prev => ({ ...prev, [field]: value }));
+  };
   useEffect(() => {
     const savedData = loadCharacterData();
+    interface ArmorSlotData {
+      used: boolean;
+      locked: boolean;
+    }
+    interface HealthSlotData {
+      used: boolean;
+    }
+    interface StessSlotData {
+      used: boolean;
+    }
     if (savedData) {
       setCharacter({
         ...initialCharacter,
@@ -117,7 +178,7 @@ export default function CharacterSheet() {
               ...initialCharacter.armor, 
               ...savedData.armor,
               slots: savedData.armor.slots 
-                ? savedData.armor.slots.map((slot: any) => ({
+                ? savedData.armor.slots.map((slot: ArmorSlotData) => ({
                     ...initialCharacter.armor.slots[0],
                     ...slot
                   }))
@@ -132,7 +193,7 @@ export default function CharacterSheet() {
               ...initialCharacter.health,
               ...savedData.health,
               slots: savedData.health.slots
-                ? savedData.health.slots.map((slot: any) => ({
+                ? savedData.health.slots.map((slot: HealthSlotData) => ({
                     ...initialCharacter.health.slots[0],
                     ...slot
                   }))
@@ -144,7 +205,7 @@ export default function CharacterSheet() {
             ...initialCharacter.stress,
             ...savedData.stress,
             slots: savedData.stress.slots
-              ? savedData.stress.slots.map((slot: any) => ({
+              ? savedData.stress.slots.map((slot: StessSlotData) => ({
                   ...initialCharacter.stress.slots[0],
                   ...slot
                 }))
@@ -176,7 +237,6 @@ export default function CharacterSheet() {
       setSaveStatus(prev => ({ ...prev, success: false, error: undefined }));
     }, 3000);
   };
-
   const SaveToast = () => {
     if (saveStatus.loading) return (
       <div className="toast loading">Saving...</div>
@@ -197,7 +257,6 @@ export default function CharacterSheet() {
       [name]: value,
     }));
   };
-
   const handleLevelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value) || 0;
     setCharacter(prev => ({
@@ -205,7 +264,6 @@ export default function CharacterSheet() {
       level: Math.max(1, Math.min(10, value)),
     }));
   };
-
   const handleStatChange = (stat: keyof Character['stats'], value: number) => {
     setCharacter(prev => ({
       ...prev,
@@ -218,7 +276,6 @@ export default function CharacterSheet() {
       },
     }));
   };
-
   const toggleStatMark = (stat: keyof Character['stats']) => {
     setCharacter(prev => ({
       ...prev,
@@ -231,7 +288,6 @@ export default function CharacterSheet() {
       },
     }));
   };
-
   const handleEvasionChange = (value: number) => {
     setCharacter(prev => ({
       ...prev,
@@ -241,7 +297,6 @@ export default function CharacterSheet() {
       }
     }));
   };
-
   const handleArmorMaxChange = (value: number) => {
     setCharacter(prev => ({
       ...prev,
@@ -251,7 +306,6 @@ export default function CharacterSheet() {
       }
     }));
   };
-
   const toggleArmorSlot = (index: number) => {
     setCharacter(prev => {
       const newSlots = [...prev.armor.slots];
@@ -268,7 +322,6 @@ export default function CharacterSheet() {
       };
     });
   };
-
   const toggleArmorSlotLock = (index: number) => {
     setCharacter(prev => {
       const newSlots = [...prev.armor.slots];
@@ -285,7 +338,6 @@ export default function CharacterSheet() {
       };
     });
   };
-
   const toggleEvasionLock = () => {
     setCharacter(prev => ({
       ...prev,
@@ -295,7 +347,6 @@ export default function CharacterSheet() {
       }
     }));
   };
-
   const toggleArmorMaxLock = () => {
     setCharacter(prev => ({
       ...prev,
@@ -305,7 +356,6 @@ export default function CharacterSheet() {
       }
     }));
   };
-
   const updateThresholdInput = (type: 'minor' | 'major', value: number) => {
     setCharacter(prev => ({
       ...prev,
@@ -315,7 +365,6 @@ export default function CharacterSheet() {
       }
     }));
   };
-
   const toggleThresholdsLock = () => {
     setCharacter(prev => ({
       ...prev,
@@ -325,7 +374,6 @@ export default function CharacterSheet() {
       }
     }));
   };
-
   const updateResourceMax = (resource: 'health' | 'stress', change: number) => {
     setCharacter(prev => ({
       ...prev,
@@ -335,7 +383,6 @@ export default function CharacterSheet() {
       }
     }));
   };
-
   const toggleResourceSlot = (resource: 'health' | 'stress', index: number) => {
     setCharacter(prev => {
       const newSlots = [...prev[resource].slots];
@@ -352,7 +399,6 @@ export default function CharacterSheet() {
       };
     });
   };
-
   // Add this state at the top of your component
   const [tabberVisible, setTabberVisible] = useState(false);
   // Add this component before your return statement
@@ -384,7 +430,6 @@ export default function CharacterSheet() {
       </button>
     </div>
   );
-
   const [showClassFeatureEdit, setShowClassFeatureEdit] = useState(false);
   const renderMarkdownPreview = (text: string) => {
     // Simple markdown to HTML conversion
@@ -420,6 +465,8 @@ export default function CharacterSheet() {
       textarea?.focus();
     }
   }, [showClassFeatureEdit]);
+
+  const [inventoryItems, setInventoryItems] = useState([]);
 
 return (
     <div>
@@ -1011,6 +1058,205 @@ return (
             </div>
           </SwiperSlide>
         </Swiper>
+      </div>
+      <div className='items-sheet'>
+        <div className=" info-container">
+        <details className="collapsible-section">
+        <summary>
+          <span>Active Weapons</span>
+          <img 
+            className="chevron-icon" 
+            src="/i-cheveron_down-alt.svg" 
+            alt="▼"
+          />
+        </summary>
+        <div className="weapons-section">
+            <div className="weapon-card primary">
+            <h3>Primary Weapon</h3>
+            <div className="form-group">
+                <label>Name</label>
+                <input 
+                type="text" 
+                value={primaryWeapon.name}
+                onChange={(e) => handleWeaponChange('primary', 'name', e.target.value)}
+                />
+            </div>
+            <div className="form-group">
+                <label>Trait & Range</label>
+                <input 
+                type="text" 
+                value={primaryWeapon.traitRange}
+                onChange={(e) => handleWeaponChange('primary', 'traitRange', e.target.value)}
+                />
+            </div>
+            <div className="damage-row">
+                <div className="form-group">
+                <label>Damage Die</label>
+                <select
+                    value={primaryWeapon.damageDie}
+                    onChange={(e) => handleWeaponChange('primary', 'damageDie', e.target.value as DamageDie)}
+                >
+                    {['d4', 'd6', 'd8', 'd12', 'd20'].map(die => (
+                    <option key={die} value={die}>{die}</option>
+                    ))}
+                </select>
+                </div>
+                
+                <div className="form-group">
+                <label>Bonus</label>
+                <input 
+                    type="number" 
+                    value={primaryWeapon.damageBonus}
+                    onChange={(e) => handleWeaponChange('primary', 'damageBonus', parseInt(e.target.value) || 0)}
+                    min="0"
+                />
+                </div>
+                
+                <div className="form-group">
+                <label>Damage Type</label>
+                <input 
+                    type="text" 
+                    value={primaryWeapon.damageType}
+                    onChange={(e) => handleWeaponChange('primary', 'damageType', e.target.value)}
+                />
+                </div>
+            </div>
+            <div className="form-group">
+                <label>Special Feature</label>
+                <textarea 
+                value={primaryWeapon.feature}
+                onChange={(e) => handleWeaponChange('primary', 'feature', e.target.value)}
+                />
+            </div>
+            </div>
+            <div className="weapon-card secondary">
+            <h3>Secondary Weapon</h3>
+                        <div className="form-group">
+                <label>Name</label>
+                <input 
+                type="text" 
+                value={secondaryWeapon.name}
+                onChange={(e) => handleWeaponChange('primary', 'name', e.target.value)}
+                />
+            </div>
+            <div className="form-group">
+                <label>Trait & Range</label>
+                <input 
+                type="text" 
+                value={secondaryWeapon.traitRange}
+                onChange={(e) => handleWeaponChange('primary', 'traitRange', e.target.value)}
+                />
+            </div>
+            <div className="damage-row">
+                <div className="form-group">
+                <label>Damage Die</label>
+                <select
+                    value={secondaryWeapon.damageDie}
+                    onChange={(e) => handleWeaponChange('primary', 'damageDie', e.target.value as DamageDie)}
+                >
+                    {['d4', 'd6', 'd8', 'd12', 'd20'].map(die => (
+                    <option key={die} value={die}>{die}</option>
+                    ))}
+                </select>
+                </div>
+                
+                <div className="form-group">
+                <label>Bonus</label>
+                <input 
+                    type="number" 
+                    value={secondaryWeapon.damageBonus}
+                    onChange={(e) => handleWeaponChange('primary', 'damageBonus', parseInt(e.target.value) || 0)}
+                    min="0"
+                />
+                </div>
+                
+                <div className="form-group">
+                <label>Damage Type</label>
+                <input 
+                    type="text" 
+                    value={secondaryWeapon.damageType}
+                    onChange={(e) => handleWeaponChange('primary', 'damageType', e.target.value)}
+                />
+                </div>
+            </div>
+            <div className="form-group">
+                <label>Special Feature</label>
+                <textarea 
+                value={secondaryWeapon.feature}
+                onChange={(e) => handleWeaponChange('primary', 'feature', e.target.value)}
+                />
+            </div>
+            </div>
+        </div>
+        </details>
+        <details className="collapsible-section">
+        <summary>
+            <span>Active Armor</span>
+            <img 
+                className="chevron-icon" 
+                src="/i-cheveron_down-alt.svg" 
+                alt="▼"
+            />
+        </summary>
+        <section className="armor-section">
+            <h2>Active Armor</h2>
+            <div className="armor-card">
+            <div className="form-group">
+                <label>Name</label>
+                <input 
+                type="text" 
+                value={activeArmor.name}
+                onChange={(e) => handleArmorChange('name', e.target.value)}
+                />
+            </div>
+            
+            <div className="thresholds-row">
+                <div className="form-group">
+                <label>Minor Threshold</label>
+                <input 
+                    type="number" 
+                    value={activeArmor.minorThreshold}
+                    onChange={(e) => handleArmorChange('minorThreshold', parseInt(e.target.value) || 0)}
+                    min="0"
+                />
+                </div>
+                
+                <div className="form-group">
+                <label>Major Threshold</label>
+                <input 
+                    type="number" 
+                    value={activeArmor.majorThreshold}
+                    onChange={(e) => handleArmorChange('majorThreshold', parseInt(e.target.value) || 0)}
+                    min="0"
+                />
+                </div>
+                
+                <div className="form-group">
+                <label>Base Score</label>
+                <input 
+                    type="number" 
+                    value={activeArmor.baseScore}
+                    onChange={(e) => handleArmorChange('baseScore', parseInt(e.target.value) || 0)}
+                    min="0"
+                />
+                </div>
+            </div>
+            
+            <div className="form-group">
+                <label>Special Feature</label>
+                <textarea 
+                value={activeArmor.feature}
+                onChange={(e) => handleArmorChange('feature', e.target.value)}
+                />
+            </div>
+            </div>
+        </section>
+        </details>
+        </div>
+        <Inventory 
+          character={character}
+          onUpdate={setInventoryItems}
+        />
       </div>
       <div className="save-section">
         <button 
