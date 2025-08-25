@@ -4,7 +4,6 @@ import { Pagination, Navigation } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { saveCharacterData, loadCharacterData } from '../../utils/storage';
 import type { Character } from '../../types/character';
-import Inventory from '../../components/Inventory';
 import './Home.css';
 
 const statDescriptions = {
@@ -465,8 +464,6 @@ export default function CharacterSheet() {
       textarea?.focus();
     }
   }, [showClassFeatureEdit]);
-
-  const [inventoryItems, setInventoryItems] = useState([]);
 
 return (
     <div>
@@ -1253,10 +1250,6 @@ return (
         </section>
         </details>
         </div>
-        <Inventory 
-          character={character}
-          onUpdate={setInventoryItems}
-        />
       </div>
       <div className="save-section">
         <button 
