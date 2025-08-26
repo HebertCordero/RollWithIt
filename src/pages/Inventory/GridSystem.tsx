@@ -11,6 +11,7 @@ import {
   useSensors,
   type DragEndEvent,
   type UniqueIdentifier,
+  useDndContext,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -32,15 +33,17 @@ interface GridSystemProps {
   minColumns?: number;
   maxColumns?: number;
   renderItem?: (item: GridItem, isDragging: boolean) => ReactNode;
+  gridType?: string;
 }
 
 export default function GridSystem({
   items,
   onItemsChange,
-  defaultColumnCount = 3,
-  minColumns = 4,
-  maxColumns = 5,
+  defaultColumnCount = 4,
+  minColumns = 3,
+  maxColumns = 6,
   renderItem,
+  gridType = "default",
 }: GridSystemProps) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [columnCount, setColumnCount] = useState(defaultColumnCount);
@@ -52,6 +55,7 @@ export default function GridSystem({
   function handleDragEnd({ active, over }: DragEndEvent) {
     setActiveId(null);
 
+    // Only handle internal grid rearrangements
     if (over && active.id !== over.id) {
       const oldIndex = items.findIndex((item) => item.id === active.id);
       const newIndex = items.findIndex((item) => item.id === over.id);
@@ -71,8 +75,8 @@ export default function GridSystem({
   );
 
   return (
-    <div>
-      <div style={{ padding: 16, marginBottom: 16 }}>
+    <div className={`grid-system ${gridType}`}>
+      <div className="grid-controls">
         <input
           type="range"
           value={columnCount}
@@ -82,7 +86,7 @@ export default function GridSystem({
             setColumnCount(Number(event.target.value));
           }}
         />
-        <span style={{ marginLeft: 8 }}>Columns: {columnCount}</span>
+        <span>Columns: {columnCount}</span>
       </div>
 
       <DndContext
@@ -93,12 +97,17 @@ export default function GridSystem({
       >
         <SortableContext items={items.map(item => item.id)}>
           <div
+            className="grid-container"
             style={{
               display: "grid",
               gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
-              gap: "16px",
+              gap: "8px",
               padding: "16px",
+              backgroundColor: "#f5f5f5",
+              borderRadius: "8px",
+              minHeight: "200px",
             }}
+            data-grid-type={gridType}
           >
             {items.map((item) => (
               <GridItemComponent
@@ -106,6 +115,7 @@ export default function GridSystem({
                 item={item}
                 activeId={activeId}
                 renderItem={renderItem}
+                gridType={gridType}
               />
             ))}
           </div>
@@ -127,9 +137,10 @@ interface GridItemComponentProps {
   item: GridItem;
   activeId: UniqueIdentifier | null;
   renderItem?: (item: GridItem, isDragging: boolean) => ReactNode;
+  gridType?: string;
 }
 
-function GridItemComponent({ item, activeId, renderItem }: GridItemComponentProps) {
+function GridItemComponent({ item, activeId, renderItem, gridType }: GridItemComponentProps) {
   const {
     setNodeRef,
     attributes,
@@ -137,7 +148,7 @@ function GridItemComponent({ item, activeId, renderItem }: GridItemComponentProp
     isDragging,
     transform,
     transition,
-  } = useSortable({ id: item.id });
+  } = useSortable({ id: item.id, data: { gridType } });
 
   return (
     <motion.div
@@ -157,17 +168,11 @@ function GridItemComponent({ item, activeId, renderItem }: GridItemComponentProp
       }}
       {...attributes}
       {...listeners}
+      data-item-id={item.id}
+      data-grid-type={gridType}
     >
       {renderItem ? renderItem(item, isDragging) : (
-        <div
-          style={{
-            padding: "16px",
-            backgroundColor: "#f0f0f0",
-            borderRadius: "8px",
-            border: "1px solid #ddd",
-            minHeight: "100px",
-          }}
-        >
+        <div className="grid-item-default">
           {item.content}
         </div>
       )}
@@ -179,17 +184,7 @@ function DragOverlayItem({ item }: { item?: GridItem }) {
   if (!item) return null;
 
   return (
-    <div
-      style={{
-        padding: "16px",
-        backgroundColor: "#f0f0f0",
-        borderRadius: "8px",
-        border: "1px solid #ddd",
-        minHeight: "100px",
-        transform: "scale(1.05)",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-      }}
-    >
+    <div className="drag-overlay-item">
       {item.content}
     </div>
   );

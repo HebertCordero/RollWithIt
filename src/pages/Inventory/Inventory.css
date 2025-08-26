@@ -1,5 +1,82 @@
+/* Inventory.css */
+.inventory-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.inventory-section {
+  margin-bottom: 30px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  padding: 20px;
+  background: white;
+}
+
+.inventory-section h2 {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+}
+
+.grid-controls {
+  padding: 10px 16px;
+  background: #f0f0f0;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.grid-controls input[type="range"] {
+  margin-right: 10px;
+}
+
 .dndItem {
-    width: 50px;
-    height: 50px;
-    touch-action: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  touch-action: none;
+}
+
+.grid-item-default {
+  padding: 16px;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drag-overlay-item {
+  padding: 16px;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  border: 2px solid #007bff;
+  min-height: 60px;
+  min-width: 60px;
+  transform: scale(1.05);
+  box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Different styles for different grid types */
+.grid-system.backpack .grid-container {
+  background-color: #e8f4f8;
+  border: 2px solid #4ecdc4;
+}
+
+.grid-system.floor .grid-container {
+  background-color: #f8f4e8;
+  border: 2px solid #f9c74f;
 }
