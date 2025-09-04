@@ -1,3 +1,5 @@
+import type { Character } from '../types/character';
+
 export const saveCharacterData = (data: Character): {success: boolean, error?: string} => {
   try {
     localStorage.setItem('daggerheartCharacter', JSON.stringify(data));
@@ -22,6 +24,28 @@ export const loadCharacterData = (): Character | null => {
     const initSlots = (length: number) => 
       Array.from({ length }, () => ({ used: false }));
     
+    // Initialize default weapon
+    const initWeapon = () => ({
+      name: '',
+      trait: '',
+      range: '',
+      damageDie: 'd6',
+      damageBonus: 0,
+      damageType: 'Physical',
+      features: [],
+      description: '',
+      enabled: false
+    });
+    // Initialize default armor
+    const initArmor = () => ({
+      name: '',
+      minorThreshold: 6,
+      majorThreshold: 12,
+      baseScore: 0,
+      features: [],
+      feature: ''
+    });
+    
     return {
       // Core info
       name: parsed.name || '',
@@ -34,7 +58,7 @@ export const loadCharacterData = (): Character | null => {
       stats: {
         AGILITY: parsed.stats?.AGILITY || { value: 0, locked: false },
         STRENGTH: parsed.stats?.STRENGTH || { value: 0, locked: false },
-        FINESSE: parsed.stats?.FINNESSE || { value: 0, locked: false },
+        FINESSE: parsed.stats?.FINESSE || { value: 0, locked: false },
         INSTINCT: parsed.stats?.INSTINCT || { value: 0, locked: false },
         PRESENCE: parsed.stats?.PRESENCE || { value: 0, locked: false },
         KNOWLEDGE: parsed.stats?.KNOWLEDGE || { value: 0, locked: false },
@@ -94,6 +118,26 @@ export const loadCharacterData = (): Character | null => {
         { description: 'I read about this', modifier: 2 },
         { description: 'In the clan, we used to...', modifier: 2 }
       ],
+      
+      // Weapons
+      weapons: parsed.weapons || {
+        primary: initWeapon(),
+        secondary: initWeapon()
+      },
+      
+      // Active Armor
+      activeArmor: parsed.activeArmor || initArmor(),
+
+      // UI State with safety check for undefined
+      uiState: parsed.uiState ? {
+        showPrimaryWeapon: parsed.uiState.showPrimaryWeapon !== undefined ? parsed.uiState.showPrimaryWeapon : true,
+        showSecondaryWeapon: parsed.uiState.showSecondaryWeapon !== undefined ? parsed.uiState.showSecondaryWeapon : true,
+        showActiveArmor: parsed.uiState.showActiveArmor !== undefined ? parsed.uiState.showActiveArmor : true
+      } : {
+        showPrimaryWeapon: true,
+        showSecondaryWeapon: true,
+        showActiveArmor: true
+      }
     };
   } catch (error) {
     console.error('Error loading character data:', error);

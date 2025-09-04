@@ -1,0 +1,84 @@
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+.tooltip-trigger {
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+}
+.tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  max-width: 250px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+.tooltip-top {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+}
+.tooltip-bottom {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+}
+.tooltip-left {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 8px;
+}
+.tooltip-right {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 8px;
+}
+.tooltip-arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.9);
+  transform: rotate(45deg);
+}
+.tooltip-top .tooltip-arrow {
+  bottom: -4px;
+  left: 25px;
+  transform: translateX(-50%) rotate(45deg);
+}
+.tooltip-bottom .tooltip-arrow {
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+}
+.tooltip-left .tooltip-arrow {
+  right: -4px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+}
+.tooltip-right .tooltip-arrow {
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+}
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .tooltip {
+    min-width: 150px;
+    max-width: 200px;
+    font-size: 13px;
+    padding: 10px;
+  }
+  .tooltip-trigger {
+    min-height: 24px; /* Larger touch target */
+  }
+}

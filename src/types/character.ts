@@ -28,6 +28,41 @@ export interface Experience {
   description: string;
   modifier: number;
 }
+// Add weapon and armor types
+export type DamageDie = 'd4' | 'd6' | 'd8' | 'd12' | 'd20';
+export type DamageType = "Physical" | "Magical";
+export type Traits = "Agility" | "Strength" | "Finesse" | "Instinct" | "Presence" | "Knowledge";
+export type Ranges = "Melee" | "Very Close" | "Close" | "Far" | "Very Far";
+export type WeaponFeatures = 
+  | "Light" | "Heavy" | "Precise" | "Brutal" | "Reach" | "Thrown" 
+  | "Versatile" | "Finesse" | "Two-Handed" | "Loading" | "Special" 
+  | "Defensive" | "Swift" | "Parrying" | "Disarming" | "Tripping" 
+  | "Silent" | "Concealable" | "Magical" | "Silvered" | "Returning";
+
+export type ArmorFeatures =
+  | "Light" | "Medium" | "Heavy" | "Reinforced" | "Flexible" 
+  | "Stealthy" | "Magical" | "Resistant" | "Deflective" | "Absorbent" 
+  | "Fortified" | "Mobile" | "Adaptive" | "Concealing" | "Regenerating" 
+  | "Energized" | "Spiked" | "Shielding" | "Ancient" | "Sacred";
+export interface Weapon {
+  name: string;
+  trait: Traits;
+  range: Ranges;
+  damageDie: DamageDie;
+  damageBonus: number;
+  damageType: DamageType;
+  features: WeaponFeatures[];
+  description: string;
+  enabled: boolean; // For toggling secondary weapons
+}
+export interface ArmorItem {
+  name: string;
+  minorThreshold: number;
+  majorThreshold: number;
+  baseScore: number;
+  features: ArmorFeatures[];
+  description: string;
+}
 export interface Character {
   name: string;
   class: string;
@@ -56,4 +91,15 @@ export interface Character {
     locked: boolean;
   };
   classFeature: string;
+  // Add weapons and active armor
+  weapons: {
+    primary: Weapon;
+    secondary: Weapon;
+  };
+  activeArmor: ArmorItem;
+  uiState: {
+    showPrimaryWeapon: boolean,
+    showSecondaryWeapon: boolean,
+    showActiveArmor: boolean
+  }
 }

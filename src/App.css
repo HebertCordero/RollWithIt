@@ -61,6 +61,9 @@ margin: 0;
 padding: 0;
 box-sizing: border-box;
 }
+html {
+  background-color: var(--theme-Gray1);
+}
 h1 {
   font-family: var(--ff-raleway);
   font-size: var(--fs-700);
@@ -80,7 +83,7 @@ p, span, div {
   color: var(--theme-Black);
   font-family: var(--ff-lato);
 }
-p {
+p, label {
   font-size: var(--fs-50);
   color: var(--theme-Gray4);
 }
