@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './DiceRoller.css';
 
-type DiceType = 'd12' | 'd20';
 type RollMode = 'normal' | 'advantage';
 type D20Mode = 'none' | 'hope' | 'fear' | 'both';
 

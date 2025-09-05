@@ -102,7 +102,7 @@ export default function ActionScreen() {
         >
           All Actions
         </button>
-        {Object.entries(actionCategories).map(([category, actions]) => (
+        {Object.entries(actionCategories).map(([category]) => (
           <button
             key={category}
             className={activeCategory === category ? 'active' : ''}

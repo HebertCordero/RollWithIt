@@ -581,7 +581,7 @@ export default function CharacterSheet() {
               onChange(newFeatures);
             }}
           />
-          <Tooltip key={feature} content={tooltips[feature]}>
+          <Tooltip key={feature} content={tooltips[feature as keyof typeof tooltips] || `Feature: ${feature}`}>
             <label htmlFor={`wfeature-${feature}`} key={feature} className="feature-checkbox">
               <p>{feature}</p>
             </label>
@@ -609,7 +609,7 @@ export default function CharacterSheet() {
               onChange(newFeatures);
             }}
           />
-          <Tooltip key={feature} content={tooltips[feature]}>
+          <Tooltip key={feature} content={tooltips[feature as keyof typeof tooltips] || `Feature: ${feature}`}>
             <label htmlFor={`afeature-${feature}`} key={feature} className="feature-checkbox">
               <p>{feature}</p>
             </label>
@@ -1832,7 +1832,7 @@ export default function CharacterSheet() {
                 <div className="form-group feature">
                   <ArmorFeatureSelector 
                     features={character.activeArmor.features}
-                    onChange={(features) => handleArmorChange("features", features)}
+                    onChange={(features) => handleArmorChange("features" as keyof ArmorItem, features)}
                   />
                 </div>
                 <div className="form-group">
