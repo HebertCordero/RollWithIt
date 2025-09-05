@@ -78,8 +78,8 @@
 }
 .info-cell.level input {
   font-size: 20px;
-  height: 90px;
   height: -webkit-fill-available;
+  height: 87px;
 }
 /* Home: Character Stats */
 .character-info.info-container {
