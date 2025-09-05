@@ -4,6 +4,7 @@ import { Pagination, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { saveCharacterData, loadCharacterData } from "../../utils/storage";
 import type { Character } from "../../types/character";
+import { characterClasses, type CharacterClass } from '../../types/character';
 
 import Tooltip from '../../components/Tooltip';
 import { tooltips } from '../../data/tooltip';
@@ -18,10 +19,9 @@ const statDescriptions = {
   PRESENCE: "Charm, Perform, Deceive",
   KNOWLEDGE: "Recall, Analyze, Comprehend",
 };
-
 const initialCharacter: Character = {
   name: "",
-  class: "",
+  class: "Bard: Troubadour",
   level: 1,
   origin: "",
   domain: "",
@@ -121,7 +121,6 @@ type WeaponFeatures =
   | "Versatile" | "Finesse" | "Two-Handed" | "Loading" | "Special" 
   | "Defensive" | "Swift" | "Parrying" | "Disarming" | "Tripping" 
   | "Silent" | "Concealable" | "Magical" | "Silvered" | "Returning";
-
 type ArmorFeatures =
   | "Light" | "Medium" | "Heavy" | "Reinforced" | "Flexible" 
   | "Stealthy" | "Magical" | "Resistant" | "Deflective" | "Absorbent" 
@@ -303,11 +302,13 @@ export default function CharacterSheet() {
           showPrimaryWeapon: true,
           showSecondaryWeapon: true,
           showActiveArmor: true
-        }
+        },
+        class: (savedData.class && characterClasses.includes(initialCharacter.class as CharacterClass)) 
+        ? savedData.class as CharacterClass 
+        : (initialCharacter.class || '') as CharacterClass,
       });
     }
   }, []);
-
   const handleSave = async () => {
     setSaveStatus({ loading: true, success: false });
     const result = saveCharacterData(character);
@@ -331,7 +332,6 @@ export default function CharacterSheet() {
       return <div className="toast error">Error: {saveStatus.error}</div>;
     return null;
   };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setCharacter((prev) => ({
@@ -702,6 +702,7 @@ export default function CharacterSheet() {
             </div>
 
             <div className="info-col">
+              {/*
               <div className="info-cell class">
                 <p>Class</p>
                 <input
@@ -711,6 +712,60 @@ export default function CharacterSheet() {
                   onChange={handleInputChange}
                   placeholder="Bard: Wordsmith"
                 />
+              </div>
+              */}
+              <div className="info-cell class">
+                <p>Class</p>
+                <select
+                  name="class"
+                  value={character.class}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setCharacter(prev => ({
+                        ...prev,
+                        class: e.target.value as CharacterClass
+                      }));
+                    }
+                  }}
+                >
+                  <option value="">Select a Class</option>
+                  <optgroup label="Bard">
+                    <option value="Bard: Troubadour">Bard: Troubadour</option>
+                    <option value="Bard: Wordsmith">Bard: Wordsmith</option>
+                  </optgroup>
+                  <optgroup label="Druid">
+                    <option value="Druid: Warden of Elements">Druid: Elements</option>
+                    <option value="Druid: Warden of Renewal">Druid: Renewal</option>
+                  </optgroup>
+                  <optgroup label="Guardian">
+                    <option value="Guardian: Oath of Stalwart">Guardian: Stalwart</option>
+                    <option value="Guardian: Oath of Vengeance">Guardian: Vengeance</option>
+                  </optgroup>
+                  <optgroup label="Ranger">
+                    <option value="Ranger: Beastbound">Ranger: Beastbound</option>
+                    <option value="Ranger: Wayfinder">Ranger: Wayfinder</option>
+                  </optgroup>
+                  <optgroup label="Rogue">
+                    <option value="Rogue: Nightwalker">Rogue: Nightwalker</option>
+                    <option value="Rogue: Syndicate">Rogue: Syndicate</option>
+                  </optgroup>
+                  <optgroup label="Seraph">
+                    <option value="Seraph: Divine Wielder">Seraph: Divine Wielder</option>
+                    <option value="Seraph: Winged Sentinel">Seraph: Winged Sentinel</option>
+                  </optgroup>
+                  <optgroup label="Sorcerer">
+                    <option value="Sorcerer: Primal Origin">Sorcerer: Primal</option>
+                    <option value="Sorcerer: Elemental Origin">Sorcerer: Elemental</option>
+                  </optgroup>
+                  <optgroup label="Warrior">
+                    <option value="Warrior: Call of the Brave">Warrior: Brave</option>
+                    <option value="Warrior: Call of the Slayer">Warrior: Slayer</option>
+                  </optgroup>
+                  <optgroup label="Wizard">
+                    <option value="Wizard: School of Knowledge">Wizard: Knowledge</option>
+                    <option value="Wizard: School of War">Wizard: War</option>
+                  </optgroup>
+                </select>
               </div>
               <div className="info-cell domain">
                 <p>Domain</p>
@@ -1416,10 +1471,10 @@ export default function CharacterSheet() {
           </SwiperSlide>
           {/* Experiences + Class Features */}
           <SwiperSlide>
-            <h2>Experiences & Features</h2>
+            <h2>Notes</h2>
             <div className="class-feature-section">
               <div className="section-header">
-                <h3>Class Features</h3>
+                <h3>Character Notes</h3>
                 <button
                   onClick={() => setShowClassFeatureEdit(!showClassFeatureEdit)}
                   className="toggle-edit-btn"

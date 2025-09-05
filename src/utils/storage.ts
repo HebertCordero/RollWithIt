@@ -1,4 +1,5 @@
-import type { Character } from '../types/character';
+import type { Character, CharacterClass } from '../types/character';
+import { characterClasses } from '../types/character';
 
 export const saveCharacterData = (data: Character): {success: boolean, error?: string} => {
   try {
@@ -49,7 +50,9 @@ export const loadCharacterData = (): Character | null => {
     return {
       // Core info
       name: parsed.name || '',
-      class: parsed.class || '',
+      class: (parsed.class && characterClasses.includes(parsed.class as CharacterClass)) 
+      ? parsed.class as CharacterClass 
+      : (parsed.class || '') as CharacterClass,
       level: parsed.level || 1,
       origin: parsed.origin || '',
       domain: parsed.domain || '',

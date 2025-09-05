@@ -63,9 +63,48 @@ export interface ArmorItem {
   features: ArmorFeatures[];
   description: string;
 }
+export type CharacterClass = 
+  | 'Bard: Troubadour'
+  | 'Bard: Wordsmith'
+  | 'Druid: Warden of Elements'
+  | 'Druid: Warden of Renewal'
+  | 'Guardian: Oath of Stalwart'
+  | 'Guardian: Oath of Vengeance'
+  | 'Ranger: Beastbound'
+  | 'Ranger: Wayfinder'
+  | 'Rogue: Nightwalker'
+  | 'Rogue: Syndicate'
+  | 'Seraph: Divine Wielder'
+  | 'Seraph: Winged Sentinel'
+  | 'Sorcerer: Primal Origin'
+  | 'Sorcerer: Elemental Origin'
+  | 'Warrior: Call of the Brave'
+  | 'Warrior: Call of the Slayer'
+  | 'Wizard: School of Knowledge'
+  | 'Wizard: School of War';
+export const characterClasses: CharacterClass[] = [
+  'Bard: Troubadour',
+  'Bard: Wordsmith',
+  'Druid: Warden of Elements',
+  'Druid: Warden of Renewal',
+  'Guardian: Oath of Stalwart',
+  'Guardian: Oath of Vengeance',
+  'Ranger: Beastbound',
+  'Ranger: Wayfinder',
+  'Rogue: Nightwalker',
+  'Rogue: Syndicate',
+  'Seraph: Divine Wielder',
+  'Seraph: Winged Sentinel',
+  'Sorcerer: Primal Origin',
+  'Sorcerer: Elemental Origin',
+  'Warrior: Call of the Brave',
+  'Warrior: Call of the Slayer',
+  'Wizard: School of Knowledge',
+  'Wizard: School of War'
+];
 export interface Character {
   name: string;
-  class: string;
+  class: CharacterClass;
   level: number;
   origin: string;
   domain: string;

@@ -107,7 +107,7 @@ nav a {
 nav a:hover {
   background-color: #e9ecef;
 }
-input {
+input, select {
   padding: 8px;
   color: var(--theme-Black);
   background-color: var(--theme-Gray1);
