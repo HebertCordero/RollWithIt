@@ -56,6 +56,7 @@
 .info-col {
   display: flex;
   flex-direction: column;
+  height: 100px;
   gap: 5px;
 }
 .info-col:first-child,
@@ -79,7 +80,7 @@
 .info-cell.level input {
   font-size: 20px;
   height: -webkit-fill-available;
-  height: 87px;
+  height: 84px;
 }
 /* Home: Character Stats */
 .character-info.info-container {
